@@ -1,0 +1,63 @@
+# Создание docker hello-world
+pipeline {
+ agent any
+ stages {
+  stage('Git') {
+   steps {git 'https://github.com/Skason/sdvps-materials.git'}
+  }
+  stage('Test') {
+   steps {
+    sh '/usr/local/go/bin/go test .'
+   }
+  }
+  stage('Build') {
+   steps {
+    sh 'docker build . -t ubuntu-bionic:8082/hello-world:v$BUILD_NUMBER'
+   }
+  }
+ }
+}
+
+# Вариант 1 Добавление бинарного go файла в nexus
+pipeline {
+ agent any
+ stages {
+  stage('Git') {
+   steps {git 'https://github.com/Skason/sdvps-materials.git'}
+  }
+  stage('Test') {
+   steps {
+    sh '/usr/local/go/bin/go test .'
+   }
+  }
+  stage('Build') {
+   steps {
+    sh 'CGO_ENABLED=0 GOOS=linux /usr/local/go/bin/go build -o main.go'
+   }
+  }
+  stage('Push') {
+   steps {
+    sh 'curl -v -u admin:12345678 http://10.88.194.149:8081/repository/netology-rh/ --upload-file main.go'   }
+  }
+ }
+}
+
+# Вариант 2 Добавление бинарного go файла в nexus (без проверки)
+pipeline {
+ agent any
+ stages {
+  stage('Git') {
+   steps {git 'https://github.com/Skason/sdvps-materials.git'}
+  }
+  stage('Build') {
+   steps {
+    sh 'CGO_ENABLED=0 GOOS=linux /usr/local/go/bin/go build -o main.go'
+   }
+  }
+  stage('Push') {
+   steps {
+    sh 'curl -v -u admin:12345678 http://10.88.194.149:8081/repository/netology-rh/ --upload-file main.go' 
+    }
+   }
+  }
+ }
