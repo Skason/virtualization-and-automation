@@ -1,0 +1,81 @@
+#После установки terraform создаем:
+nano ~/.terraformrc
+#Вставляем
+provider_installation {
+  network_mirror {
+    url = "https://terraform-mirror.yandexcloud.net/"
+    include = ["registry.terraform.io/*/*"]
+  }
+  direct {
+    exclude = ["registry.terraform.io/*/*"]
+  }
+}
+#По пути /opt/terraform/yandex/ создаем файл filename.tf и добавляем данные
+terraform {
+  required_providers {
+    yandex = {
+      source = "yandex-cloud/yandex"
+    }
+  }
+  required_version = ">= 0.13"
+}
+
+provider "yandex" {
+  token     = "<OAuth>"
+  cloud_id  = "<cloud ID>"
+  folder_id = "<folder ID>"
+  zone      = "<default availability zone>"
+}
+#Создаем файл meta.txt
+#cloud-config
+users:
+  - name: <имя пользователя>
+    groups: sudo
+    shell: /bin/bash
+    sudo: ['ALL=(ALL) NOPASSWD:ALL']
+    ssh_authorized_keys:
+      - ssh-ed25519 AAAAB3Nza......OjbSMRX user@example.com
+      - ssh-ed25519 AAAAB3Nza......Pu00jRN user@desktop
+#Пример для создания vm добавляется в файл tf
+resource "yandex_compute_instance" "vm-1" {
+  name = "terraform1"
+
+  resources {
+    cores  = 2
+    memory = 2
+  }
+
+  boot_disk {
+    initialize_params {
+      image_id = "fd8jaavlbau6e005s4pc"
+      size = 5
+    }
+  }
+
+  network_interface {
+    subnet_id = yandex_vpc_subnet.subnet-1.id
+    nat       = true
+  }
+
+  metadata = {
+    user-data = "${file("./meta.txt")}"
+  }
+
+}
+resource "yandex_vpc_network" "network-1" {
+  name = "network1"
+}
+
+resource "yandex_vpc_subnet" "subnet-1" {
+  name           = "subnet1"
+  zone           = "ru-central1-a"
+  network_id     = yandex_vpc_network.network-1.id
+  v4_cidr_blocks = ["192.168.10.0/24"]
+}
+
+output "internal_ip_address_vm_1" {
+  value = yandex_compute_instance.vm-1.network_interface.0.ip_address
+}
+output "external_ip_address_vm_1" {
+  value = yandex_compute_instance.vm-1.network_interface.0.nat_ip_address
+}
