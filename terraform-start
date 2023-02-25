@@ -1,6 +1,15 @@
-#После установки terraform создаем:
+# Установка terraform yc
+wget https://hashicorp-releases.yandexcloud.net/terraform/1.3.9/terraform_1.3.9_linux_amd64.zip
+unzip terraform_1.3.9_linux_amd64.zip
+mv terraform /usr/local/bin
+cd /usr/local/bin
+chown root:root terraform
+chmod 755 terraform
+
+# После установки terraform создаем:
 nano ~/.terraformrc
-#Вставляем
+
+# Вставляем
 provider_installation {
   network_mirror {
     url = "https://terraform-mirror.yandexcloud.net/"
